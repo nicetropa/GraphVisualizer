@@ -41,7 +41,8 @@ GraphVisualizer/
 │   ├── algorithm/
 │   │   ├── BFS.java               # Parcours en largeur
 │   │   ├── DFS.java               # Parcours en profondeur
-│   │   └── Dijkstra.java          # Algorithme de Dijkstra
+│   │   ├── Dijkstra.java          # Algorithme de Dijkstra
+|   |   └── Astar.java             # Algorithme A*
 │   └── gui/
 │       ├── MainFrame.java         # Fenêtre principale
 │       ├── GraphCanvas.java       # Rendu du graphe (Swing + Graphics2D)
@@ -53,7 +54,7 @@ GraphVisualizer/
 
 ## Fonctionnalités
 
-- **3 algorithmes** : BFS, DFS, Dijkstra
+- **4 algorithmes** : BFS, DFS, Dijkstra, A*
 - **Sélection départ / arrivée** : menus déroulants
 - **Nombre de sommets** : de 2 à 10, génération aléatoire
 - **Édition des arêtes** :
