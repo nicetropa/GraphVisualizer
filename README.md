@@ -1,4 +1,4 @@
-# Visualiseur de graphe — BFS / DFS / Dijkstra
+# Visualiseur de graphe — BFS / DFS / Dijkstra / A*
 
 Application Java Swing pour visualiser pas à pas les algorithmes de parcours de graphe.
 

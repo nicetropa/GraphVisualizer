@@ -32,7 +32,7 @@ public class MainFrame extends JFrame {
     private boolean running = false;
 
     public MainFrame() {
-        super("Visualiseur de graphe — BFS / DFS / Dijkstra");
+        super("Visualiseur de graphe — BFS / DFS / Dijkstra / A*");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout(8, 8));
         getContentPane().setBackground(BG);
