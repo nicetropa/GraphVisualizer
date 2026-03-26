@@ -13,48 +13,61 @@ public class DFS {
         List<AlgoStep> steps = new ArrayList<>();
         Map<String, NodeState> ns = initStates(g, start, end);
         Map<String, EdgeState> es = new HashMap<>();
-        Map<String, String> par  = new HashMap<>();
-        Set<String> visited      = new HashSet<>();
-        Deque<String> stack      = new ArrayDeque<>();
+        Map<String, String> par   = new HashMap<>();
+        Set<String> visited       = new HashSet<>();
 
-        stack.push(start);
-        ns.put(start, NodeState.QUEUED);
-        steps.add(snap(ns, es, "Départ : " + start + " empilé.", stack, null));
+        dfs(g, start, end, ns, es, par, visited, steps);
 
-        while (!stack.isEmpty()) {
-            String cur = stack.pop();
-            if (visited.contains(cur)) continue;
+        return steps;
+    }
 
-            ns.put(cur, NodeState.CURRENT);
-            steps.add(snap(ns, es, "Dépile " + cur + ".", stack, null));
+    private static boolean dfs(Graph g, String cur, String end,
+                                Map<String, NodeState> ns,
+                                Map<String, EdgeState> es,
+                                Map<String, String> par,
+                                Set<String> visited,
+                                List<AlgoStep> steps) {
 
-            if (cur.equals(end)) {
-                steps.add(snap(ns, es, "Arrivée " + end + " atteinte !", stack, par));
-                break;
-            }
+        visited.add(cur);
+        ns.put(cur, NodeState.CURRENT);
+        steps.add(snap(ns, es, "Visite " + cur + ".", null));
 
-            visited.add(cur);
-            ns.put(cur, NodeState.VISITED);
+        if (cur.equals(end)) {
+            steps.add(snap(ns, es, "Arrivée " + end + " atteinte !", par));
+            return true;
+        }
 
-            List<Graph.Edge> nbEdges = new ArrayList<>(g.getNeighborEdges(cur));
-            Collections.reverse(nbEdges);
+        ns.put(cur, NodeState.VISITED);
 
-            for (Graph.Edge e : nbEdges) {
+        
+            for (Graph.Edge e : g.getNeighborEdges(cur)) {
                 String nb = g.neighborOf(e, cur);
                 if (!visited.contains(nb)) {
                     par.put(nb, cur);
                     ns.put(nb, NodeState.QUEUED);
-                    stack.push(nb);
                     es.put(e.key(), EdgeState.ACTIVE);
-                    steps.add(snap(ns, es, nb + " empilé depuis " + cur + ".", stack, null));
-                    es.put(e.key(), EdgeState.PATH);
-                }
-            }
+                    steps.add(snap(ns, es, "Explore " + cur + " → " + nb + ".", null));
 
-            steps.add(snap(ns, es, cur + " visité.", stack, null));
+                    Set<String> visitedSnapshot = new HashSet<>(visited);
+                    Map<String, String> parSnapshot = new HashMap<>(par);
+
+                    if (dfs(g, nb, end, ns, es, par, visited, steps)) {
+                        es.put(e.key(), EdgeState.PATH);
+                        return true;
+                    }
+
+                    visited.clear();
+                    visited.addAll(visitedSnapshot);
+                    par.clear();
+                    par.putAll(parSnapshot);
+
+                    es.put(e.key(), EdgeState.NORMAL);
+                    ns.put(nb, NodeState.UNVISITED);
+                    steps.add(snap(ns, es, "Backtrack depuis " + nb + " vers " + cur + ".", null));
         }
+}
 
-        return steps;
+        return false;
     }
 
     private static Map<String, NodeState> initStates(Graph g, String start, String end) {
@@ -66,8 +79,7 @@ public class DFS {
     }
 
     private static AlgoStep snap(Map<String, NodeState> ns, Map<String, EdgeState> es,
-                                  String msg, Deque<String> stack, Map<String, String> prev) {
-        List<String> list = new ArrayList<>(stack);
-        return new AlgoStep(ns, es, msg, list, null, prev);
+                                  String msg, Map<String, String> prev) {
+        return new AlgoStep(ns, es, msg, null, null, prev);
     }
 }
