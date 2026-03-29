@@ -26,9 +26,9 @@ public class MainFrame extends JFrame {
 
     private JComboBox<String> algoBox;
     private JComboBox<String> sizeBox;
-    private JSpinner nodeSpinner, seedSpinner, mazeSeedSpinner;
-    private JButton btnGen, btnPrepare, btnAuto, btnStep, btnReset, btnRndSeed;
-    private JLabel infoLabel, statsLabel, pathLabel;
+    private JSpinner nodeSpinner, seedSpinner, mazeSeedSpinner, mazeSeedSpinner2;
+    private JButton btnGen, btnPrepare, btnAuto, btnStep, btnReset, btnRndSeed, btnRndSeed2;
+    private JLabel infoLabel, statsLabel, pathLabel, lblSeed2;
     private JPanel graphConfigPanel, mazeConfigPanel, edgeContainer;
     private JPanel startEndPanel;
     private JComboBox<String> startBox, endBox;
@@ -73,7 +73,10 @@ public class MainFrame extends JFrame {
         top.setBackground(BG);
         top.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0xD3D1C7)));
 
-        algoBox = new JComboBox<>(new String[]{"BFS — labyrinthe", "DFS — labyrinthe", "Dijkstra — graphe", "A* — graphe"});
+        algoBox = new JComboBox<>(new String[]{
+            "BFS — labyrinthe", "DFS — labyrinthe", "Dijkstra — labyrinthe", "A* — labyrinthe",
+            "Dijkstra — graphe", "A* — graphe"
+        });
         algoBox.addActionListener(e -> switchMode());
 
         // Config labyrinthe
@@ -88,9 +91,20 @@ public class MainFrame extends JFrame {
             mazeSeedSpinner.setValue((int)(Math.random() * 100000));
             doGenerate();
         });
+        
+        mazeSeedSpinner2 = new JSpinner(new SpinnerNumberModel(43, 0, 999999, 1));
+        mazeSeedSpinner2.setPreferredSize(new Dimension(72, 26));
+        btnRndSeed2 = btn("Aléatoire 2");
+        btnRndSeed2.addActionListener(e -> {
+            mazeSeedSpinner2.setValue((int)(Math.random() * 100000));
+            doGenerate();
+        });
+        lblSeed2 = label("Graine 2 :");
+
         mazeConfigPanel.add(label("Taille :"));   mazeConfigPanel.add(sizeBox);
         mazeConfigPanel.add(label("Graine :"));   mazeConfigPanel.add(mazeSeedSpinner);
         mazeConfigPanel.add(btnRndSeed);
+        mazeConfigPanel.add(lblSeed2); mazeConfigPanel.add(mazeSeedSpinner2); mazeConfigPanel.add(btnRndSeed2);
 
         // Config graphe
         graphConfigPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
@@ -236,18 +250,26 @@ public class MainFrame extends JFrame {
 
     private boolean isMazeMode() {
         int idx = algoBox.getSelectedIndex();
-        return idx == 0 || idx == 1;
+        return idx < 4;
     }
     private boolean isDijkstraOrAStar() { return !isMazeMode(); }
 
     private void switchMode() {
         boolean maze = isMazeMode();
+        boolean mergeMaze = maze && (algoBox.getSelectedIndex() == 2 || algoBox.getSelectedIndex() == 3);
+        
         mazeConfigPanel.setVisible(maze);
+        if (lblSeed2 != null) {
+            lblSeed2.setVisible(mergeMaze);
+            mazeSeedSpinner2.setVisible(mergeMaze);
+            btnRndSeed2.setVisible(mergeMaze);
+        }
+        
         graphConfigPanel.setVisible(!maze);
         startEndPanel.setVisible(!maze);
         edgeContainer.setVisible(!maze);
         canvas.setMode(maze ? GraphCanvas.Mode.MAZE : GraphCanvas.Mode.GRAPH);
-        edgePanel.setShowWeights(algoBox.getSelectedIndex() == 2); // Dijkstra
+        edgePanel.setShowWeights(algoBox.getSelectedIndex() == 4); // Dijkstra
         doGenerate();
     }
 
@@ -256,8 +278,13 @@ public class MainFrame extends JFrame {
         stopAuto();
         if (isMazeMode()) {
             int size = switch (sizeBox.getSelectedIndex()) { case 0->11; case 2->31; case 3->41; default->21; };
-            long seed = ((Number) mazeSeedSpinner.getValue()).longValue();
-            maze = new MazeModel(size, seed);
+            long seed1 = ((Number) mazeSeedSpinner.getValue()).longValue();
+            if (algoBox.getSelectedIndex() == 2 || algoBox.getSelectedIndex() == 3) {
+                long seed2 = ((Number) mazeSeedSpinner2.getValue()).longValue();
+                maze = new MazeModel(size, seed1, seed2);
+            } else {
+                maze = new MazeModel(size, seed1);
+            }
             canvas.setMaze(maze);
             canvas.setMode(GraphCanvas.Mode.MAZE);
         } else {
@@ -301,11 +328,13 @@ public class MainFrame extends JFrame {
         int algo = algoBox.getSelectedIndex();
         if (algo == 0) mazeSteps  = algorithm.MazeBFS.compute(maze);
         else if (algo == 1) mazeSteps = algorithm.MazeDFS.compute(maze);
+        else if (algo == 2) mazeSteps = algorithm.MazeDijkstra.compute(maze);
+        else if (algo == 3) mazeSteps = algorithm.MazeAStar.compute(maze);
         else {
             String s = (String) startBox.getSelectedItem();
             String e = (String) endBox.getSelectedItem();
             if (s == null || e == null) return;
-            if (algo == 2) graphSteps = Dijkstra.compute(graph, s, e);
+            if (algo == 4) graphSteps = Dijkstra.compute(graph, s, e);
             else           graphSteps = AStar.compute(graph, s, e);
         }
         stepIdx = 0;
@@ -394,7 +423,11 @@ public class MainFrame extends JFrame {
             int route = 0;
             for (CellState cs : step.cellStates) if (cs == CellState.ROUTE) route++;
             String st = "Cellules explorées : " + explored;
-            if (step.queueSize >= 0)  st += (algoBox.getSelectedIndex() == 0 ? " · File : " : " · Pile : ") + step.queueSize;
+            if (step.queueSize >= 0) {
+                int algoIdx = algoBox.getSelectedIndex();
+                String ds = (algoIdx == 0) ? "File" : (algoIdx == 1 ? "Pile" : "File de priorité");
+                st += " · " + ds + " : " + step.queueSize;
+            }
             if (route > 0)            st += " · Chemin : " + route + " cases";
             statsLabel.setText(st);
             if (step.routeLength > 0) pathLabel.setText("Chemin trouvé : " + step.routeLength + " cases.");

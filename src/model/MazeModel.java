@@ -29,6 +29,24 @@ public class MazeModel {
         this.endCell   = idx(rows - 2, cols - 2);
     }
 
+    public MazeModel(int size, long seed1, long seed2) {
+        this.cols = size;
+        this.rows = size;
+        this.grid = new int[rows * cols];
+        
+        MazeModel m1 = new MazeModel(size, seed1);
+        MazeModel m2 = new MazeModel(size, seed2);
+        
+        for (int i = 0; i < grid.length; i++) {
+            this.grid[i] = m1.grid[i] | m2.grid[i];
+        }
+
+        int centerRow = rows / 2; if (centerRow % 2 == 0) centerRow++;
+        int centerCol = cols / 2; if (centerCol % 2 == 0) centerCol++;
+        this.startCell = idx(centerRow, centerCol);
+        this.endCell   = idx(rows - 2, cols - 2);
+    }
+
 
     private void generate(long seed) {
         long[] state = {seed & 0xFFFFFFFFL};
